@@ -19,64 +19,64 @@
 Create a monorepo project called "cyfor" with this exact structure. Create every folder and an empty or placeholder file where noted. Do not add extra framework boilerplate beyond what's listed.
 
 cyfor/
-  backend/
-    app/
-      main.py
-      core/
-        config.py
-        security.py
-      db/
-        database.py
-        models.py
-      schemas/
-        __init__.py
-      api/
-        routes/
-          __init__.py
-      services/
-        ingestion/
-          __init__.py
-        correlation/
-          __init__.py
-        risk/
-          __init__.py
-          profiles/
-        geo/
-          __init__.py
-          lookups/
-        ai/
-          __init__.py
-        reports/
-          __init__.py
-      utils/
-        __init__.py
-        hashing.py
-        file_storage.py
-    data/
-      sample/
-      threat_intel/
-    uploads/
-    tests/
-    requirements.txt
-    .env.example
-  frontend/
-    src/
-      main.jsx
-      App.jsx
-      styles/
-        tokens.css
-      components/
-      pages/
-      api/
-      routes/
-    public/
-    index.html
-    package.json
-    tailwind.config.js
-    postcss.config.js
-    .env.example
-  README.md
-  .gitignore
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── core/
+│   │   │   ├── config.py
+│   │   │   └── security.py
+│   │   ├── db/
+│   │   │   ├── database.py
+│   │   │   └── models.py
+│   │   ├── schemas/
+│   │   │   └── __init__.py
+│   │   ├── api/
+│   │   │   └── routes/
+│   │   │       └── __init__.py
+│   │   ├── services/
+│   │   │   ├── ingestion/
+│   │   │   │   └── __init__.py
+│   │   │   ├── correlation/
+│   │   │   │   └── __init__.py
+│   │   │   ├── risk/
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── profiles/
+│   │   │   ├── geo/
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── lookups/
+│   │   │   ├── ai/
+│   │   │   │   └── __init__.py
+│   │   │   └── reports/
+│   │   │       └── __init__.py
+│   │   └── utils/
+│   │       ├── __init__.py
+│   │       ├── hashing.py
+│   │       └── file_storage.py
+│   ├── data/
+│   │   ├── sample/
+│   │   └── threat_intel/
+│   ├── uploads/
+│   ├── tests/
+│   ├── requirements.txt
+│   └── .env.example
+├── frontend/
+│   ├── src/
+│   │   ├── main.jsx
+│   │   ├── App.jsx
+│   │   ├── styles/
+│   │   │   └── tokens.css
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── api/
+│   │   └── routes/
+│   ├── public/
+│   ├── index.html
+│   ├── package.json
+│   ├── tailwind.config.js
+│   ├── postcss.config.js
+│   └── .env.example
+├── README.md
+└── .gitignore
 
 In requirements.txt, list: fastapi, uvicorn[standard], sqlalchemy, python-jose[cryptography], passlib[bcrypt], python-multipart, pandas, openpyxl, networkx, weasyprint, python-dotenv, pydantic.
 
