@@ -11,7 +11,7 @@ export default function HeatmapGrid({
 
   if (isLoading) {
     return (
-      <div className="py-10 bg-bgSubtle border border-border rounded-lg text-center text-textDim text-[13px]">
+      <div className="py-10 bg-bgSubtle border border-border rounded-sm text-center text-textDim text-[13px]">
         Analyzing jurisdictional fraud telemetry...
       </div>
     );
@@ -52,7 +52,7 @@ export default function HeatmapGrid({
   return (
     <div className="space-y-4">
       {/* Top Banner: Hotspot Summary & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-bgSubtle border border-border rounded-lg text-[12.5px]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-bgSubtle border border-border rounded-sm text-[12.5px]">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded bg-riskHighBg text-riskHigh flex items-center justify-center flex-shrink-0">
             <Flame className="w-4 h-4" />
@@ -93,7 +93,7 @@ export default function HeatmapGrid({
 
       {/* Selected District Filter Banner */}
       {selectedDistrict && (
-        <div className="flex items-center justify-between px-3.5 py-2 bg-accentSoft border border-accentBorder rounded-lg text-[12px] text-accent font-medium">
+        <div className="flex items-center justify-between px-3.5 py-2 bg-accentSoft border border-accentBorder rounded-sm text-[12px] text-accent font-medium">
           <div className="flex items-center gap-2">
             <MapPin className="w-3.5 h-3.5 text-accent" />
             <span>
@@ -120,7 +120,7 @@ export default function HeatmapGrid({
             <div
               key={item.district}
               onClick={() => onSelectDistrict(isSelected ? null : item.district)}
-              className={`p-3 rounded-lg border cursor-pointer transition-all flex flex-col justify-between select-none ${getTileStyles(
+              className={`p-3 rounded-sm border cursor-pointer transition-all flex flex-col justify-between select-none ${getTileStyles(
                 item.level,
                 isSelected
               )}`}
@@ -136,7 +136,7 @@ export default function HeatmapGrid({
                   <span className="text-[10px] uppercase font-mono font-semibold tracking-wider opacity-70">
                     {item.level || "low"}
                   </span>
-                  <span className="text-[15px] font-bold font-mono text-text">
+                  <span className="text-[16px] font-display font-semibold text-text">
                     {item.case_count}
                   </span>
                 </div>

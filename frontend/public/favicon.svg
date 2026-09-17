@@ -1,35 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <defs>
-    <linearGradient id="shieldGrad" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0F4C81" />
-      <stop offset="100%" stop-color="#082A4A" />
-    </linearGradient>
-    <linearGradient id="accentGrad" x1="12" y1="14" x2="36" y2="34" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#38BDF8" />
-      <stop offset="100%" stop-color="#0F4C81" />
-    </linearGradient>
-  </defs>
-  <!-- Outer Shield Shell -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
+  <rect x="1.5" y="6.5" width="37" height="30" rx="2.5" fill="#181510" />
+  <path d="M1.5 12.5H13L15.5 8.5H1.5V12.5Z" fill="#181510" />
+  <rect x="4.5" y="9.5" width="31" height="24" rx="1.5" fill="#F5F3ED" />
   <path
-    d="M24 4L8 10V22C8 32.5 14.8 42.2 24 44C33.2 42.2 40 32.5 40 22V10L24 4Z"
-    fill="url(#shieldGrad)"
-    stroke="#0F4C81"
-    stroke-width="2"
-  />
-  <!-- Inner Circuit Grid & Nodes -->
-  <path
-    d="M24 11V25M24 25L16 33M24 25L32 33M16 18L24 25M32 18L24 25"
-    stroke="#93C5FD"
-    stroke-width="1.75"
+    d="M9 27L14.5 20L18.5 24L25.5 15L31 21"
+    stroke="#0E7C86"
+    stroke-width="2.4"
     stroke-linecap="round"
     stroke-linejoin="round"
+    fill="none"
   />
-  <!-- Node Circles -->
-  <circle cx="24" cy="11" r="2.5" fill="#38BDF8" />
-  <circle cx="16" cy="18" r="2" fill="#BAE6FD" />
-  <circle cx="32" cy="18" r="2" fill="#BAE6FD" />
-  <circle cx="16" cy="33" r="2.25" fill="#38BDF8" />
-  <circle cx="32" cy="33" r="2.25" fill="#38BDF8" />
-  <!-- Central Glowing Hub -->
-  <circle cx="24" cy="25" r="3.5" fill="#FFFFFF" stroke="#0F4C81" stroke-width="1.5" />
+  <circle cx="9" cy="27" r="2" fill="#0E7C86" />
+  <circle cx="18.5" cy="24" r="2" fill="#0E7C86" />
+  <circle cx="25.5" cy="15" r="2" fill="#0E7C86" />
+  <circle cx="31" cy="21" r="2" fill="#B23A2E" />
 </svg>

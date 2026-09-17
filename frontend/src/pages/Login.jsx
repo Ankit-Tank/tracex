@@ -46,13 +46,13 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-bgSubtle flex flex-col justify-center items-center px-4 py-8 select-none">
       {/* Centered Login Card */}
-      <div className="max-w-[380px] w-full bg-bg border border-border rounded p-6 shadow-none">
+      <div className="max-w-[380px] w-full bg-bg border border-border rounded-sm p-7">
         {/* Header / Logo */}
         <Logo size="md" className="mb-5 pb-4 border-b border-border" />
 
         {/* Notice Banner if Error */}
         {error && (
-          <div className="mb-4 p-2.5 bg-riskHighBg border border-riskHigh/30 rounded text-riskHigh text-[12px] flex items-start gap-2">
+          <div className="mb-4 p-2.5 bg-riskHighBg border border-riskHigh/30 rounded-sm text-riskHigh text-[12px] flex items-start gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <span className="leading-snug">{error}</span>
           </div>
@@ -70,7 +70,7 @@ export default function Login() {
               value={badgeId}
               onChange={(e) => setBadgeId(e.target.value)}
               placeholder="e.g. MP-IO-4471"
-              className="w-full px-3 py-2 text-[13px] font-mono bg-bg border border-border rounded text-text placeholder-textFaint focus:outline-none focus:border-accent focus:ring-0 transition-colors"
+              className="w-full px-3 py-2 text-[13px] font-mono bg-bg border border-border rounded-sm text-text placeholder-textFaint focus:outline-none focus:border-accent focus:ring-0 transition-colors"
             />
           </div>
 
@@ -86,14 +86,14 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter secure credentials"
-              className="w-full px-3 py-2 text-[13px] bg-bg border border-border rounded text-text placeholder-textFaint focus:outline-none focus:border-accent focus:ring-0 transition-colors"
+              className="w-full px-3 py-2 text-[13px] bg-bg border border-border rounded-sm text-text placeholder-textFaint focus:outline-none focus:border-accent focus:ring-0 transition-colors"
             />
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full mt-2 py-2.5 px-4 bg-accent hover:bg-accentHover disabled:opacity-60 text-white rounded text-[13px] font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            className="w-full mt-2 py-2.5 px-4 bg-accent hover:bg-accentHover disabled:opacity-60 text-white rounded-sm text-[13px] font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             {isLoading ? (
               <>

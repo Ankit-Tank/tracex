@@ -6,7 +6,7 @@ export default function StatRow({ stats = {} }) {
       label: "Critical priority cases",
       value: stats.critical_cases ?? 0,
       highlight: (stats.critical_cases || 0) > 0,
-      highlightColor: "text-riskHigh",
+      highlightColor: "text-riskCritical",
     },
     {
       label: "Active case load",
@@ -21,22 +21,20 @@ export default function StatRow({ stats = {} }) {
     {
       label: "Closed this month",
       value: stats.closed_this_month ?? 0,
+      highlightColor: "text-statusSuccess",
     },
   ];
 
   return (
-    <div className="py-2">
+    <div className="border border-border rounded-sm bg-bg">
       <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-border">
-        {items.map((item, idx) => (
-          <div
-            key={item.label}
-            className={`py-3 ${idx === 0 ? "md:pr-6" : idx === items.length - 1 ? "md:pl-6" : "md:px-6"}`}
-          >
-            <div className="text-[11.5px] uppercase tracking-wider font-medium text-textDim">
+        {items.map((item) => (
+          <div key={item.label} className="px-5 py-4">
+            <div className="text-[11px] uppercase tracking-wider font-medium text-textDim">
               {item.label}
             </div>
             <div
-              className={`text-2xl font-bold font-mono mt-1 ${
+              className={`text-3xl font-display font-semibold mt-1.5 ${
                 item.highlight ? item.highlightColor : "text-text"
               }`}
             >

@@ -12,7 +12,7 @@ export default function EvidenceTray({ files = [], isLoading = false }) {
 
   if (!files || files.length === 0) {
     return (
-      <div className="py-3 px-3 bg-bgSubtle border border-border rounded flex items-center justify-between text-[12.5px] text-textDim">
+      <div className="py-3 px-3 bg-bgSubtle border border-border rounded-sm flex items-center justify-between text-[12.5px] text-textDim">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-riskLow flex-shrink-0" />
           <span>All ingested evidence files across active cases have been normalized and indexed.</span>
@@ -23,7 +23,7 @@ export default function EvidenceTray({ files = [], isLoading = false }) {
   }
 
   return (
-    <div className="divide-y divide-border border border-border rounded">
+    <div className="divide-y divide-border border border-border rounded-sm">
       {files.map((file) => {
         const isProcessing = (file.upload_status || "").toLowerCase() === "processing";
         const formattedTime = file.uploaded_at
@@ -61,7 +61,7 @@ export default function EvidenceTray({ files = [], isLoading = false }) {
             </div>
 
             <span
-              className={`px-2 py-0.5 rounded text-[11px] font-mono uppercase tracking-wider font-medium ${
+              className={`px-2 py-0.5 rounded-sm text-[11px] font-mono uppercase tracking-wider font-medium ${
                 isProcessing
                   ? "bg-accentSoft text-accent border border-accentBorder"
                   : "bg-urgentBg text-urgentText border border-urgentBorder"

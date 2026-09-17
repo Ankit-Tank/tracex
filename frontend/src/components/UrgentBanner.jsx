@@ -24,11 +24,11 @@ export default function UrgentBanner({ cases = [] }) {
   }
 
   return (
-    <div className="bg-urgentBg border border-urgentBorder rounded px-4 py-3 flex items-center justify-between text-[13px] text-urgentText transition-all">
+    <div className="bg-urgentBg border-l-4 border-l-riskCritical border-y border-r border-border rounded-sm px-4 py-3 flex items-center justify-between text-[13px] text-urgentText transition-all">
       <div className="flex items-center gap-2.5">
-        <AlertTriangle className="w-4 h-4 flex-shrink-0 text-urgentText" />
+        <AlertTriangle className="w-4 h-4 flex-shrink-0 text-riskCritical" />
         <div>
-          <span className="font-semibold mr-2">Action Required:</span>
+          <span className="font-semibold mr-2">Action required:</span>
           <span>
             Case <strong className="font-mono font-bold">{urgentCase.case_number}</strong> —{" "}
             {urgentCase.why_flagged || "High-confidence multi-hop entity link flagged for immediate freeze"}
@@ -37,7 +37,7 @@ export default function UrgentBanner({ cases = [] }) {
       </div>
       <Link
         to={`/cases/${urgentCase.id}/graph`}
-        className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1 text-[12px] font-semibold text-urgentText border border-urgentText/30 rounded hover:bg-urgentText/10 transition-colors"
+        className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1 text-[12px] font-semibold text-urgentText border border-urgentText/30 rounded-sm hover:bg-urgentText/10 transition-colors"
       >
         <span>Open case</span>
         <ArrowRight className="w-3.5 h-3.5" />

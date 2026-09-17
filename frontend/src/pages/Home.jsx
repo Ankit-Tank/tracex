@@ -83,14 +83,17 @@ export default function Home() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-7 pb-16">
-      {/* 1. Header / Welcome Banner */}
-      <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
+      {/* 1. Header — case-room log line, not a generic welcome card */}
+      <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border pb-5">
         <div>
-          <h1 className="text-2xl font-bold text-text tracking-tight">
-            Welcome back, Officer {officer.name || "Investigator"}
+          <div className="text-[11px] uppercase tracking-wider text-textFaint font-medium mb-1">
+            {todayStr}
+          </div>
+          <h1 className="text-[26px] font-display font-semibold text-text tracking-tight leading-none">
+            {officer.station_name || "Bhopal Cyber Operations Room"}
           </h1>
-          <p className="text-[12.5px] text-textDim mt-1">
-            {officer.station_name || "Bhopal Cyber Operations Room"} &nbsp;·&nbsp; {todayStr}
+          <p className="text-[13px] text-textDim mt-1.5">
+            Logged in as <span className="font-medium text-text">{officer.name || "Investigator"}</span>
           </p>
         </div>
 
@@ -98,13 +101,13 @@ export default function Home() {
           <button
             onClick={fetchDashboardData}
             title="Refresh operational telemetry"
-            className="p-2 text-textDim hover:text-text hover:bg-bgSubtle border border-border rounded-md transition-colors cursor-pointer"
+            className="p-2 text-textDim hover:text-text hover:bg-bgSubtle border border-border rounded-sm transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-accent" : ""}`} />
           </button>
           <button
             onClick={openNewInvestigation}
-            className="flex items-center gap-1.5 px-4 py-2 bg-accent hover:bg-accentHover text-white rounded-md text-[13px] font-medium transition-colors cursor-pointer shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-2 bg-accent hover:bg-accentHover text-white rounded-sm text-[13px] font-medium transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>New investigation</span>
