@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple, Set, Optional, Any
+from typing import List, Dict, Tuple, Set, Optional, Any, Callable
 from collections import defaultdict
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
@@ -23,18 +23,68 @@ def _share_a_record(entity_a: Entity, entity_b: Entity) -> bool:
     together on the same underlying record (e.g. the same CDR call row, or the
     same bank/UPI transaction row) rather than just somewhere in the same file.
 
-    Without this check, correlation used to link every IMEI in a file to every
-    phone number in that file (a full cross-product), producing a huge number
-    of meaningless edges and an unreadable graph. When row-level tracking isn't
-    available for a given entity (older data, or entity types like APK/email
-    dumps that aren't row-oriented), fall back to treating them as co-occurring
-    so existing behavior for those sources is unchanged.
+    Kept for backward compatibility / any other callers. The hot paths below
+    (_link_cooccurring_pairs) implement the same semantics via an inverted row
+    index instead of calling this per-pair, so they no longer use it directly.
     """
     idx_a = (entity_a.extra or {}).get("row_indices")
     idx_b = (entity_b.extra or {}).get("row_indices")
     if not idx_a or not idx_b:
         return True
     return not set(idx_a).isdisjoint(idx_b)
+
+
+def _bucket_by_row(ents: List[Entity]) -> Tuple[Dict[int, List[Entity]], List[Entity]]:
+    """Split entities into:
+    - a dict of row_index -> entities that appeared at that row (row-tracked)
+    - a list of entities with no row_indices at all (untracked)
+
+    An entity with multiple row_indices is placed under every row it appears in.
+    """
+    by_row: Dict[int, List[Entity]] = defaultdict(list)
+    no_row: List[Entity] = []
+    for e in ents:
+        idx = (e.extra or {}).get("row_indices")
+        if not idx:
+            no_row.append(e)
+        else:
+            for i in idx:
+                by_row[i].append(e)
+    return by_row, no_row
+
+
+def _link_cooccurring_pairs(
+    group_a: List[Entity],
+    group_b: List[Entity],
+    link_fn: Callable[[Entity, Entity], None],
+) -> None:
+    """Link entities from two groups that co-occur on the same underlying record.
+
+    Same semantics as calling `_share_a_record` on every (a, b) pair -- entities
+    with row_indices only link when a row index is shared; entities with no
+    row_indices at all fall back to linking against everything (unchanged
+    behavior for older data / non-row-oriented sources) -- but computed via an
+    inverted row index instead of an O(len(group_a) * len(group_b)) scan.
+    `link_fn` is expected to be idempotent-safe (add_link already dedupes by
+    entity pair + basis), so a pair being visited more than once here is fine.
+    """
+    by_row_a, no_row_a = _bucket_by_row(group_a)
+    by_row_b, no_row_b = _bucket_by_row(group_b)
+
+    # Row-tracked entities: only pair within the same row.
+    for row_idx, row_a_ents in by_row_a.items():
+        for b_ent in by_row_b.get(row_idx, []):
+            for a_ent in row_a_ents:
+                link_fn(a_ent, b_ent)
+
+    # Untracked entities fall back to full co-occurrence, same as before.
+    flat_row_tracked_a = [e for ents in by_row_a.values() for e in ents]
+    for a_ent in no_row_a:
+        for b_ent in group_b:
+            link_fn(a_ent, b_ent)
+    for b_ent in no_row_b:
+        for a_ent in flat_row_tracked_a:
+            link_fn(a_ent, b_ent)
 
 
 def get_confidence_and_basis(
@@ -152,44 +202,65 @@ def correlate_case(case_id: int, db: Session) -> List[EntityLink]:
         by_file[ent.evidence_file_id].append(ent)
 
     for file_id, file_entities in by_file.items():
-        # Look for co-occurring IMEI and Phone / IMSI
+        # Look for co-occurring IMEI and Phone / IMSI.
+        # Bucketed by row index instead of a full imeis x phones cross-product --
+        # bounded by the number of rows in the file, not len(imeis) * len(phones).
         imeis = [e for e in file_entities if (e.entity_type.value if hasattr(e.entity_type, "value") else str(e.entity_type)) == "imei"]
         phones = [e for e in file_entities if (e.entity_type.value if hasattr(e.entity_type, "value") else str(e.entity_type)) in ["phone", "imsi"]]
-        for imei_ent in imeis:
-            for phone_ent in phones:
-                if not _share_a_record(imei_ent, phone_ent):
-                    continue
-                ev_ids = list(set((imei_ent.source_evidence_ids or []) + (phone_ent.source_evidence_ids or [])))
-                add_link(imei_ent, phone_ent, "shared_imei", 0.6, ev_ids)
 
-        # Look for co-occurring Account and UPI
+        def _link_imei_phone(imei_ent: Entity, phone_ent: Entity) -> None:
+            ev_ids = list(set((imei_ent.source_evidence_ids or []) + (phone_ent.source_evidence_ids or [])))
+            add_link(imei_ent, phone_ent, "shared_imei", 0.6, ev_ids)
+
+        _link_cooccurring_pairs(imeis, phones, _link_imei_phone)
+
+        # Look for co-occurring Account and UPI -- same row-bucketed approach.
         accounts = [e for e in file_entities if (e.entity_type.value if hasattr(e.entity_type, "value") else str(e.entity_type)) == "account"]
         upis = [e for e in file_entities if (e.entity_type.value if hasattr(e.entity_type, "value") else str(e.entity_type)) == "upi_handle"]
-        for acc_ent in accounts:
-            for upi_ent in upis:
-                if not _share_a_record(acc_ent, upi_ent):
-                    continue
-                ev_ids = list(set((acc_ent.source_evidence_ids or []) + (upi_ent.source_evidence_ids or [])))
-                add_link(acc_ent, upi_ent, "shared_upi_handle", 0.95, ev_ids)
 
-    # Look for IP /24 subnet correlation among all IP entities in the case
+        def _link_acc_upi(acc_ent: Entity, upi_ent: Entity) -> None:
+            ev_ids = list(set((acc_ent.source_evidence_ids or []) + (upi_ent.source_evidence_ids or [])))
+            add_link(acc_ent, upi_ent, "shared_upi_handle", 0.95, ev_ids)
+
+        _link_cooccurring_pairs(accounts, upis, _link_acc_upi)
+
+    # Look for IP /24 subnet correlation among all IP entities in the case.
+    # Bucketed by subnet prefix instead of a full O(n^2) scan over every IP pair --
+    # bounded by the number of distinct /24s, not the total number of IPs squared.
     ip_entities = [
         e for e in entities
         if (e.entity_type.value if hasattr(e.entity_type, "value") else str(e.entity_type)) == "ip_address"
     ]
-    for i in range(len(ip_entities)):
-        for j in range(i + 1, len(ip_entities)):
-            if is_same_subnet_24(ip_entities[i].value, ip_entities[j].value):
-                ev_ids = list(set((ip_entities[i].source_evidence_ids or []) + (ip_entities[j].source_evidence_ids or [])))
-                add_link(ip_entities[i], ip_entities[j], "shared_ip_subnet", 0.4, ev_ids)
+    subnet_buckets: Dict[str, List[Entity]] = defaultdict(list)
+    for ent in ip_entities:
+        parts = ent.value.strip().split(".")
+        if len(parts) == 4 and all(p.isdigit() for p in parts):
+            subnet_buckets[".".join(parts[:3])].append(ent)
+        # malformed IP values are skipped, same as before (is_same_subnet_24 would
+        # have caught the ValueError and returned False for every pair anyway)
+
+    for subnet_key, bucket in subnet_buckets.items():
+        for i in range(len(bucket)):
+            for j in range(i + 1, len(bucket)):
+                if bucket[i].value != bucket[j].value:
+                    ev_ids = list(set((bucket[i].source_evidence_ids or []) + (bucket[j].source_evidence_ids or [])))
+                    add_link(bucket[i], bucket[j], "shared_ip_subnet", 0.4, ev_ids)
 
     # 3. Cross-case correlation:
-    # Match any entity in the current case against entities from other cases
-    other_entities: List[Entity] = (
-        db.query(Entity)
-        .filter(Entity.case_id != case_id)
-        .all()
-    )
+    # Only fetch other-case entities whose *value* actually appears somewhere in
+    # this case, instead of loading every entity from every other case in the
+    # database. Type + exact matching is still done in Python below, so results
+    # are identical -- this just avoids shipping the whole table over the wire.
+    all_case_values: Set[str] = {val for (_, val) in by_type_and_val.keys()}
+    other_entities: List[Entity] = []
+    if all_case_values:
+        other_entities = (
+            db.query(Entity)
+            .filter(Entity.case_id != case_id)
+            .filter(Entity.value.in_(list(all_case_values)))
+            .all()
+        )
+
     if other_entities:
         # Cache other cases for quick lookup
         other_cases: Dict[int, Case] = {

@@ -1,4 +1,5 @@
 from typing import Dict, Any, List
+from collections import defaultdict
 from sqlalchemy.orm import Session
 from app.db.models import Entity, EntityLink
 
@@ -37,6 +38,13 @@ def build_case_graph(case_id: int, db: Session) -> Dict[str, Any]:
         for ext_e in external_entities:
             entity_map[ext_e.id] = ext_e
 
+    # Node degree (badge count) = number of edges touching that entity.
+    # Derived entirely from the `links` we already loaded above -- no extra query.
+    degree: Dict[int, int] = defaultdict(int)
+    for link in links:
+        degree[link.entity_a_id] += 1
+        degree[link.entity_b_id] += 1
+
     nodes = []
     for ent_id, ent in entity_map.items():
         type_str = ent.entity_type.value if hasattr(ent.entity_type, "value") else str(ent.entity_type)
@@ -49,6 +57,7 @@ def build_case_graph(case_id: int, db: Session) -> Dict[str, Any]:
             "anomaly_reason": ent.anomaly_reason,
             "case_id": ent.case_id,
             "is_cross_case": ent.case_id != case_id,
+            "degree": degree.get(ent.id, 0),
         })
 
     edges = []
