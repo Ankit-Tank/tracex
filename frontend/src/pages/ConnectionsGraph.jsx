@@ -5,6 +5,7 @@ import {
   RefreshCw,
   Sparkles,
   Shield,
+  Layers,
   AlertCircle,
   FileText,
   ChevronDown,
@@ -36,41 +37,46 @@ export default function ConnectionsGraph() {
   const [summaryData, setSummaryData] = useState(null);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [loadingStage, setLoadingStage] = useState("Building your relationship map…");
-  const [isStoryLoading, setIsStoryLoading] = useState(true);
   const [isRegeneratingSummary, setIsRegeneratingSummary] = useState(false);
   const [error, setError] = useState(null);
 
   const loadCaseAndGraph = async () => {
     setIsLoading(true);
-    setIsStoryLoading(true);
-    setLoadingStage("Building your relationship map…");
-    setGraphData({ nodes: [], edges: [] });
-    setTopRiskEntities([]);
-    setSummaryData(null);
-    setRecordsStats({ telecom: 0, bank_upi: 0, other: 0, total: 0 });
     setError(null);
+    try {
+      // Paint the relationship map as soon as it is ready. The AI narrative may
+      // take longer, and must never hold the rest of the investigation hostage.
+      const caseRes = await apiClient.get(`cases/${caseId}`);
+      setCaseData(caseRes);
+      setIsLoading(false);
+      const [graphRes, topRiskRes, summaryRes, allCasesRes] = await Promise.allSettled([
+        apiClient.get(`cases/${caseId}/graph`), apiClient.get(`cases/${caseId}/entities/top-risk`),
+        apiClient.get(`cases/${caseId}/summary`), apiClient.get("cases"),
+      ]);
+      if (graphRes.status === "fulfilled" && graphRes.value) {
+        setGraphData({
+          nodes: graphRes.value.nodes || [],
+          edges: graphRes.value.edges || [],
+        });
+        if (graphRes.value.records_by_category) {
+          setRecordsStats(graphRes.value.records_by_category);
+        }
+      }
 
-    // These requests intentionally resolve independently. The frame appears at once,
-    // then facts, relationships, targets, and the narrative fill in as they arrive.
-    apiClient.get(`cases/${caseId}`).then(setCaseData).catch(() => {
-      setError("Case could not be found or loaded");
-    });
-    apiClient.get("cases").then((data) => Array.isArray(data) && setAllCases(data)).catch(() => {});
-    apiClient.get(`cases/${caseId}/entities/top-risk`)
-      .then((data) => Array.isArray(data) && setTopRiskEntities(data))
-      .catch(() => {});
-    apiClient.get(`cases/${caseId}/graph`)
-      .then((data) => {
-        setGraphData({ nodes: data?.nodes || [], edges: data?.edges || [] });
-        if (data?.records_by_category) setRecordsStats(data.records_by_category);
-      })
-      .catch(() => setError("The relationship map could not be loaded."))
-      .finally(() => setIsLoading(false));
-    apiClient.get(`cases/${caseId}/summary`)
-      .then((data) => data && setSummaryData(data))
-      .catch(() => {})
-      .finally(() => setIsStoryLoading(false));
+      if (topRiskRes.status === "fulfilled" && Array.isArray(topRiskRes.value)) {
+        setTopRiskEntities(topRiskRes.value);
+      }
+
+      if (summaryRes.status === "fulfilled" && summaryRes.value) {
+        setSummaryData(summaryRes.value);
+      }
+
+      if (allCasesRes.status === "fulfilled" && Array.isArray(allCasesRes.value)) {
+        setAllCases(allCasesRes.value);
+      }
+    } catch (err) {
+      setError(err.message || "Failed to load graph data for this case.");
+    } finally { setIsLoading(false); }
   };
 
   useEffect(() => {
@@ -201,7 +207,7 @@ export default function ConnectionsGraph() {
       </section>
 
       {/* 3. Two-Column Layout: Network Graph (flex, wider) + 290px Side Column */}
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
+      <div className="flex flex-col xl:flex-row gap-6 items-start">
         {/* Main Graph Panel */}
         <div className="flex-1 min-w-0 w-full space-y-2">
           <NetworkGraph
@@ -210,12 +216,11 @@ export default function ConnectionsGraph() {
             caseNumber={caseData?.case_number || caseId}
             victimName={caseData?.victim_name}
             isLoading={isLoading}
-            loadingLabel={loadingStage}
           />
         </div>
 
         {/* Side Column (290px) */}
-        <div className="w-full lg:w-[290px] lg:min-w-[290px] space-y-5">
+        <div className="w-full xl:w-[290px] xl:min-w-[290px] space-y-5">
           {/* Top Risk Entities Panel */}
           <div className="border border-border rounded-sm p-4 space-y-3 bg-bg shadow-sm">
             <div className="border-b border-border pb-2 flex items-center justify-between">
@@ -264,39 +269,52 @@ export default function ConnectionsGraph() {
         </div>
       </div>
 
-      <CaseNarrative
-        summaryData={summaryData}
-        isLoading={isStoryLoading}
-        isRegenerating={isRegeneratingSummary}
-        onRegenerate={handleRegenerateSummary}
-        nodes={graphData.nodes}
-        edges={graphData.edges}
-        targets={topRiskEntities}
-      />
+      {/* The story uses the width below the map so it remains readable and is
+          visually separate from both the graph and priority targets. */}
+      <section className="border border-border rounded-xl bg-bg shadow-sm overflow-hidden">
+          <div className="p-5 space-y-3">
+            <div className="border-b border-border pb-2 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-accent" />
+                <div><h3 className="text-[14px] tracking-wide font-bold text-text">AI Case Narrative</h3><p className="text-[11px] text-textFaint mt-0.5">A simple explanation of what the relationship map means</p></div>
+              </div>
+              <button
+                onClick={handleRegenerateSummary}
+                disabled={isRegeneratingSummary}
+                className="text-[11px] font-semibold text-accent hover:text-accentHover hover:underline disabled:opacity-50 flex items-center gap-1 cursor-pointer"
+              >
+                <RefreshCw
+                  className={`w-3 h-3 ${isRegeneratingSummary ? "animate-spin" : ""}`}
+                />
+                <span>Regenerate</span>
+              </button>
+            </div>
+
+            {summaryData ? (<div className="grid md:grid-cols-2 gap-px bg-border rounded-lg overflow-hidden">
+                {["What is happening?", "How are they connected?", "What stands out?", "Key takeaway"].map((heading, idx) => <div key={heading} className="bg-bg p-4 text-[12px] text-textDim leading-relaxed"><h4 className="text-accent font-bold text-[11px] uppercase tracking-wide mb-1">{heading}</h4><p>{summaryData.narrative_text.split("\n\n").filter((p) => p.trim())[idx] || (idx === 3 ? "Follow the highlighted trail and begin with the priority targets." : "This part of the story is still being refined from the evidence.")}</p></div>)}
+                <div className="pt-2 border-t border-border flex items-center justify-between text-[10px] text-textFaint">
+                  <span>Model: {summaryData.model_version || "Deterministic Narrative"}</span>
+                  <span className="font-mono">
+                    {summaryData.generated_at
+                      ? new Date(summaryData.generated_at).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : ""}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="text-[12px] text-textDim py-4 text-center space-y-1">
+                <p className="font-medium text-text">No correlation narrative generated yet.</p>
+                <p className="text-[11px] text-textFaint">
+                  Upload multi-source evidence and run correlation to synthesize an AI brief.
+                </p>
+              </div>
+            )}
+          </div>
+      </section>
     </div>
   );
 }
 
-function CaseNarrative({ summaryData, isLoading, isRegenerating, onRegenerate, nodes, edges, targets }) {
-  const sourceText = summaryData?.narrative_text?.trim();
-  const riskTarget = targets[0]?.value || "the highest-priority identifier";
-  const hasGraph = nodes.length > 0;
-  const cards = [
-    ["What is happening?", hasGraph ? `${nodes.length} identifiers are part of this case map, with ${edges.length} observed relationships between them.` : "We are preparing the identifiers and evidence for this case."],
-    ["How are they connected?", hasGraph ? `The lines show where the same account, device, phone, or online trace appears together. Follow the strongest lines first.` : "Connections will appear here as soon as the relationship map is ready."],
-    ["What stands out?", targets.length ? `${riskTarget} is the first item to review because it has been flagged as a priority risk target.` : "We are checking for identifiers that deserve immediate attention."],
-    ["Key takeaway", hasGraph ? `Start with ${riskTarget}, then use the connected lines to decide which supporting records to verify next.` : "The story will update when enough evidence has been connected."],
-  ];
-  return (
-    <section className="relative overflow-hidden border border-border rounded-sm bg-bg shadow-sm">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent" />
-      <div className="p-5 sm:p-6 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3"><span className="w-9 h-9 rounded-full bg-accentSoft border border-accentBorder flex items-center justify-center"><Sparkles className="w-4 h-4 text-accent" /></span><div><h2 className="font-display text-lg font-semibold text-text">AI Case Narrative</h2><p className="text-[12px] text-textDim">A simple reading of what the relationship map means.</p></div></div>
-        <button onClick={onRegenerate} disabled={isRegenerating} className="self-start sm:self-auto text-[12px] font-semibold text-accent hover:text-accentHover disabled:opacity-50 flex items-center gap-1.5"><RefreshCw className={`w-3.5 h-3.5 ${isRegenerating ? "animate-spin" : ""}`} />Refresh story</button>
-      </div>
-      {isLoading ? <div className="grid md:grid-cols-2 gap-px bg-border"><NarrativeSkeleton label="Creating your story…" /><NarrativeSkeleton /><NarrativeSkeleton /><NarrativeSkeleton /></div> : <><div className="grid md:grid-cols-2 gap-px bg-border">{cards.map(([title, body], index) => <div key={title} className={`bg-bg p-5 min-h-[132px] ${index === 3 ? "md:col-span-2" : ""}`}><span className="text-[10px] font-bold tracking-[0.16em] uppercase text-accent">0{index + 1}</span><h3 className="mt-2 text-[14px] font-semibold text-text">{title}</h3><p className="mt-1.5 text-[12.5px] leading-relaxed text-textDim max-w-3xl">{body}</p></div>)}</div>{sourceText && <details className="px-5 py-3 border-t border-border text-[12px] text-textDim"><summary className="cursor-pointer text-textFaint hover:text-text">View detailed analyst note</summary><p className="mt-3 leading-relaxed whitespace-pre-line">{sourceText}</p></details>}</>}
-    </section>
-  );
-}
-
-function NarrativeSkeleton({ label }) { return <div className="bg-bg p-5 min-h-[132px] animate-pulse"><span className="text-[12px] text-textDim">{label}</span><div className="mt-4 h-3 w-2/5 rounded bg-bgMuted" /><div className="mt-3 h-2.5 w-full rounded bg-bgMuted" /><div className="mt-2 h-2.5 w-4/5 rounded bg-bgMuted" /></div>; }
