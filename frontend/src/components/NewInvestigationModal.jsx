@@ -187,7 +187,7 @@ export default function NewInvestigationModal({ isOpen, onClose, onCaseCreated }
                 <strong className="font-mono font-bold">{caseData.case_number}</strong> —{" "}
                 {caseData.victim_name}
               </span>
-              <span className="text-[11px] uppercase font-mono px-2 py-0.5 bg-white border border-accentBorder rounded">
+              <span className="text-[11px] uppercase font-mono px-2 py-0.5 bg-bg border border-accentBorder rounded">
                 Ready for ingestion
               </span>
             </div>

@@ -74,8 +74,8 @@ def get_summary_stats(
     now = datetime.utcnow()
     start_of_month = datetime(now.year, now.month, 1)
 
-    # Critical cases: risk_level == "high"
-    critical_count = (
+    # High-risk cases: risk_level == "high" (the model has no separate "critical" tier)
+    high_risk_count = (
         db.query(func.count(Case.id))
         .filter(Case.risk_level == RiskLevel.high)
         .scalar()
@@ -118,7 +118,7 @@ def get_summary_stats(
     )
 
     return CaseSummaryStats(
-        critical_cases=critical_count,
+        high_risk_cases=high_risk_count,
         active_cases=active_count,
         awaiting_correlation=awaiting_count,
         closed_this_month=closed_month_count,

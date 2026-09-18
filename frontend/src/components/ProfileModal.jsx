@@ -34,7 +34,7 @@ export default function ProfileModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-bg w-full max-w-md border border-border rounded-lg shadow-2xl overflow-hidden select-none animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-bg w-full max-w-md border border-border rounded-sm shadow-2xl overflow-hidden select-none animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-bgSubtle">
           <div className="flex items-center gap-2.5">
@@ -61,7 +61,7 @@ export default function ProfileModal({ isOpen, onClose }) {
         {/* Profile Content */}
         <div className="p-5 space-y-4 text-[12.5px]">
           {/* Identity Grid */}
-          <div className="bg-bgSubtle border border-border rounded-lg p-3.5 space-y-2.5">
+          <div className="bg-bgSubtle border border-border rounded-sm p-3.5 space-y-2.5">
             <div className="flex items-center justify-between pb-2 border-b border-border">
               <span className="text-[11px] uppercase font-semibold text-textFaint tracking-wider">
                 Full Officer Name
@@ -97,7 +97,7 @@ export default function ProfileModal({ isOpen, onClose }) {
           </div>
 
           {/* Session Integrity */}
-          <div className="border border-border rounded-lg p-3 space-y-1.5 text-[11.5px]">
+          <div className="border border-border rounded-sm p-3 space-y-1.5 text-[11.5px]">
             <div className="flex items-center justify-between text-text">
               <span className="font-medium flex items-center gap-1.5">
                 <Key className="w-3.5 h-3.5 text-accent" />

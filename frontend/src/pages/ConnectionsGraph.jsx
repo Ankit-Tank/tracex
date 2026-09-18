@@ -152,14 +152,14 @@ export default function ConnectionsGraph() {
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-medium text-textDim hover:text-text bg-bg border border-border hover:bg-bgSubtle rounded-md transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-medium text-textDim hover:text-text bg-bg border border-border hover:bg-bgSubtle rounded-sm transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Operations queue</span>
           </button>
           <Link
             to={`/cases/${caseId}/reports`}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-[12.5px] font-medium bg-accent hover:bg-accentHover text-white rounded-md transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-[12.5px] font-medium bg-accent hover:bg-accentHover text-white rounded-sm transition-colors shadow-sm"
           >
             <FileText className="w-3.5 h-3.5" />
             <span>Generate reports</span>
@@ -169,7 +169,7 @@ export default function ConnectionsGraph() {
 
       {/* Error Alert if any */}
       {error && (
-        <div className="p-3 bg-riskHighBg border border-riskHigh/30 rounded-md text-riskHigh text-[12.5px] flex items-center gap-2">
+        <div className="p-3 bg-riskHighBg border border-riskHigh/30 rounded-sm text-riskHigh text-[12.5px] flex items-center gap-2">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
@@ -229,7 +229,7 @@ export default function ConnectionsGraph() {
         {/* Side Column (290px) */}
         <div className="w-full lg:w-[290px] lg:min-w-[290px] space-y-5">
           {/* Top Risk Entities Panel */}
-          <div className="border border-border rounded-lg p-4 space-y-3 bg-bg shadow-sm">
+          <div className="border border-border rounded-sm p-4 space-y-3 bg-bg shadow-sm">
             <div className="border-b border-border pb-2 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <Shield className="w-4 h-4 text-accent" />
@@ -251,7 +251,7 @@ export default function ConnectionsGraph() {
                 {topRiskEntities.map((ent) => (
                   <div
                     key={ent.id}
-                    className="p-2.5 bg-bgSubtle rounded-md border border-border text-[12px] space-y-1 hover:border-accent/40 transition-colors"
+                    className="p-2.5 bg-bgSubtle rounded-sm border border-border text-[12px] space-y-1 hover:border-accent/40 transition-colors"
                   >
                     <div className="flex items-center justify-between gap-1">
                       <span className="text-[10px] uppercase font-bold text-textFaint tracking-wider">
@@ -274,7 +274,7 @@ export default function ConnectionsGraph() {
           </div>
 
           {/* AI Case Summary Panel */}
-          <div className="border border-border rounded-lg p-4 space-y-3 bg-bg shadow-sm">
+          <div className="border border-border rounded-sm p-4 space-y-3 bg-bg shadow-sm">
             <div className="border-b border-border pb-2 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-accent" />

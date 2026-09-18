@@ -364,13 +364,15 @@ def _render_pdf_with_reportlab_takedown(
     return buf.getvalue()
 
 
-def _render_pdf(html_string: str, fallback_bytes: bytes) -> bytes:
-    """Attempt WeasyPrint rendering, seamlessly falling back to ReportLab on environments without GTK."""
+def _render_pdf(html_string: str, fallback_factory) -> bytes:
+    """Attempt WeasyPrint rendering, seamlessly falling back to a lazily-built
+    ReportLab document (only constructed if WeasyPrint actually fails) on
+    environments without GTK/Pango system libraries."""
     try:
         import weasyprint
         return weasyprint.HTML(string=html_string).write_pdf()
     except Exception:
-        return fallback_bytes
+        return fallback_factory()
 
 
 def generate_investigative_brief(case_id: int, db: Session) -> Tuple[bytes, Path, str]:
@@ -414,7 +416,7 @@ def generate_investigative_brief(case_id: int, db: Session) -> Tuple[bytes, Path
                     if n["label"] not in freeze_targets:
                         freeze_targets.append(n["label"])
 
-    fallback_bytes = _render_pdf_with_reportlab_brief(
+    fallback_factory = lambda: _render_pdf_with_reportlab_brief(
         case=case,
         officer=officer,
         summary_text=summary_text,
@@ -466,10 +468,9 @@ th {{ background: #0f172a; color: #fff; }}
 </body>
 </html>"""
 
-    pdf_bytes = _render_pdf(html_content, fallback_bytes)
+    pdf_bytes = _render_pdf(html_content, fallback_factory)
     sha256_hash = compute_sha256(pdf_bytes)
 
-    # Embed footer hash line into ReportLab if needed or save with hash
     clean_num = case.case_number.replace("#", "").strip()
     reports_dir = get_reports_dir(case_id)
     dest_path = reports_dir / f"investigative_brief_{clean_num}.pdf"
@@ -524,7 +525,7 @@ def generate_takedown_request(case_id: int, db: Session) -> Tuple[bytes, Path, s
                 })
                 break
 
-    fallback_bytes = _render_pdf_with_reportlab_takedown(
+    fallback_factory = lambda: _render_pdf_with_reportlab_takedown(
         case=case,
         officer=officer,
         matches=matches,
@@ -542,7 +543,7 @@ def generate_takedown_request(case_id: int, db: Session) -> Tuple[bytes, Path, s
 </body>
 </html>"""
 
-    pdf_bytes = _render_pdf(html_content, fallback_bytes)
+    pdf_bytes = _render_pdf(html_content, fallback_factory)
     sha256_hash = compute_sha256(pdf_bytes)
 
     reports_dir = get_reports_dir(case_id)

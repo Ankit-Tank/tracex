@@ -164,7 +164,7 @@ export default function Reports() {
         <div className="flex items-center gap-2.5">
           <Link
             to={`/cases/${caseId}/graph`}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-medium text-textDim hover:text-text bg-bg border border-border hover:bg-bgSubtle rounded-md transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-medium text-textDim hover:text-text bg-bg border border-border hover:bg-bgSubtle rounded-sm transition-colors"
           >
             <Network className="w-3.5 h-3.5" />
             <span>Interactive graph</span>
@@ -172,7 +172,7 @@ export default function Reports() {
 
           <Link
             to="/"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-medium text-textDim hover:text-text bg-bg border border-border hover:bg-bgSubtle rounded-md transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-medium text-textDim hover:text-text bg-bg border border-border hover:bg-bgSubtle rounded-sm transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Operations queue</span>
@@ -182,7 +182,7 @@ export default function Reports() {
 
       {/* Error Alert */}
       {error && (
-        <div className="p-3 bg-riskHighBg border border-riskHigh/30 rounded-md text-riskHigh text-[12.5px] flex items-center gap-2">
+        <div className="p-3 bg-riskHighBg border border-riskHigh/30 rounded-sm text-riskHigh text-[12.5px] flex items-center gap-2">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
         </div>

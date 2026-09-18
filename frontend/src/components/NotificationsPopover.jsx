@@ -77,7 +77,7 @@ export default function NotificationsPopover({ isOpen, onClose, anchorRef }) {
 
   return (
     <div
-      className="absolute right-0 mt-2 w-96 max-w-[92vw] bg-bg border border-border rounded-lg shadow-xl z-50 overflow-hidden text-text select-none animate-in fade-in duration-150"
+      className="absolute right-0 mt-2 w-96 max-w-[92vw] bg-bg border border-border rounded-sm shadow-xl z-50 overflow-hidden text-text select-none animate-in fade-in duration-150"
       style={{ top: "100%" }}
     >
       {/* Header */}

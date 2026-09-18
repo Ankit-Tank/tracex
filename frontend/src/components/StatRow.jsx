@@ -3,10 +3,10 @@ import React from "react";
 export default function StatRow({ stats = {} }) {
   const items = [
     {
-      label: "Critical priority cases",
-      value: stats.critical_cases ?? 0,
-      highlight: (stats.critical_cases || 0) > 0,
-      highlightColor: "text-riskCritical",
+      label: "High-risk cases",
+      value: stats.high_risk_cases ?? 0,
+      highlight: (stats.high_risk_cases || 0) > 0,
+      highlightColor: "text-riskHigh",
     },
     {
       label: "Active case load",

@@ -15,7 +15,7 @@ export default function Home() {
 
   const [officer, setOfficerState] = useState(() => getOfficer() || { name: "Officer", station_name: "MP Cyber Cell" });
   const [stats, setStats] = useState({
-    critical_cases: 0,
+    high_risk_cases: 0,
     active_cases: 0,
     awaiting_correlation: 0,
     closed_this_month: 0,

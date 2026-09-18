@@ -39,7 +39,7 @@ class CaseDetail(CaseRead):
 
 
 class CaseSummaryStats(BaseModel):
-    critical_cases: int
+    high_risk_cases: int
     active_cases: int
     awaiting_correlation: int
     closed_this_month: int
