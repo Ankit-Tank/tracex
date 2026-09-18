@@ -18,6 +18,25 @@ def is_same_subnet_24(ip1: str, ip2: str) -> bool:
     return False
 
 
+def _share_a_record(entity_a: Entity, entity_b: Entity) -> bool:
+    """Return True if two entities from the same evidence file actually appeared
+    together on the same underlying record (e.g. the same CDR call row, or the
+    same bank/UPI transaction row) rather than just somewhere in the same file.
+
+    Without this check, correlation used to link every IMEI in a file to every
+    phone number in that file (a full cross-product), producing a huge number
+    of meaningless edges and an unreadable graph. When row-level tracking isn't
+    available for a given entity (older data, or entity types like APK/email
+    dumps that aren't row-oriented), fall back to treating them as co-occurring
+    so existing behavior for those sources is unchanged.
+    """
+    idx_a = (entity_a.extra or {}).get("row_indices")
+    idx_b = (entity_b.extra or {}).get("row_indices")
+    if not idx_a or not idx_b:
+        return True
+    return not set(idx_a).isdisjoint(idx_b)
+
+
 def get_confidence_and_basis(
     entity_type_str: str,
     is_multi_source: bool = False,
@@ -138,6 +157,8 @@ def correlate_case(case_id: int, db: Session) -> List[EntityLink]:
         phones = [e for e in file_entities if (e.entity_type.value if hasattr(e.entity_type, "value") else str(e.entity_type)) in ["phone", "imsi"]]
         for imei_ent in imeis:
             for phone_ent in phones:
+                if not _share_a_record(imei_ent, phone_ent):
+                    continue
                 ev_ids = list(set((imei_ent.source_evidence_ids or []) + (phone_ent.source_evidence_ids or [])))
                 add_link(imei_ent, phone_ent, "shared_imei", 0.6, ev_ids)
 
@@ -146,6 +167,8 @@ def correlate_case(case_id: int, db: Session) -> List[EntityLink]:
         upis = [e for e in file_entities if (e.entity_type.value if hasattr(e.entity_type, "value") else str(e.entity_type)) == "upi_handle"]
         for acc_ent in accounts:
             for upi_ent in upis:
+                if not _share_a_record(acc_ent, upi_ent):
+                    continue
                 ev_ids = list(set((acc_ent.source_evidence_ids or []) + (upi_ent.source_evidence_ids or [])))
                 add_link(acc_ent, upi_ent, "shared_upi_handle", 0.95, ev_ids)
 

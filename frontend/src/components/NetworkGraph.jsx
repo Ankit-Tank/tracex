@@ -143,6 +143,15 @@ export default function NetworkGraph({
     return counts;
   }, [edges]);
 
+  // O(1) node lookup by id — isEdgeVisible was previously doing nodes.find()
+  // for every edge on every render, which is O(edges × nodes) and became a
+  // real hotspot once graphs had a few hundred edges.
+  const nodeById = useMemo(() => {
+    const map = new Map();
+    nodes.forEach((n) => map.set(n.id, n));
+    return map;
+  }, [nodes]);
+
   const isNodeVisible = (node) => {
     if (moneyTrailOnly) {
       return node.entity_type === "account" || node.entity_type === "upi_handle";
@@ -159,8 +168,8 @@ export default function NetworkGraph({
   };
 
   const isEdgeVisible = (edge) => {
-    const sNode = nodes.find((n) => n.id === edge.source);
-    const tNode = nodes.find((n) => n.id === edge.target);
+    const sNode = nodeById.get(edge.source);
+    const tNode = nodeById.get(edge.target);
     if (!sNode || !tNode) return false;
     if (moneyTrailOnly) {
       const isFinS = sNode.entity_type === "account" || sNode.entity_type === "upi_handle";
@@ -332,8 +341,8 @@ export default function NetworkGraph({
                     markerEnd={isCritical ? "url(#arrowCritical)" : "url(#arrow)"}
                     className="transition-all duration-150 cursor-pointer"
                     onClick={() => {
-                      const s = nodes.find((n) => n.id === edge.source);
-                      const t = nodes.find((n) => n.id === edge.target);
+                      const s = nodeById.get(edge.source);
+                      const t = nodeById.get(edge.target);
                       setSelectedEdge({ ...edge, sourceNode: s, targetNode: t });
                     }}
                   />
@@ -343,8 +352,8 @@ export default function NetworkGraph({
                       transform={`translate(${cx}, ${cy})`}
                       className="cursor-pointer select-none"
                       onClick={() => {
-                        const s = nodes.find((n) => n.id === edge.source);
-                        const t = nodes.find((n) => n.id === edge.target);
+                        const s = nodeById.get(edge.source);
+                        const t = nodeById.get(edge.target);
                         setSelectedEdge({ ...edge, sourceNode: s, targetNode: t });
                       }}
                     >
@@ -509,7 +518,7 @@ export default function NetworkGraph({
                     .filter((e) => e.source === selectedNode.id || e.target === selectedNode.id)
                     .map((e) => {
                       const otherId = e.source === selectedNode.id ? e.target : e.source;
-                      const otherNode = nodes.find((n) => n.id === otherId);
+                      const otherNode = nodeById.get(otherId);
                       return (
                         <div key={e.id} className="p-1.5 bg-bgSubtle rounded-sm border border-border flex items-center justify-between">
                           <span className="font-mono font-medium text-text truncate max-w-[140px]">{otherNode?.label || `#${otherId}`}</span>

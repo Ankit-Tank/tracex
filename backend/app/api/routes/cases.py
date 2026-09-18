@@ -132,12 +132,55 @@ def list_cases(
 ):
     # Sort by risk_score descending (nulls last)
     cases = db.query(Case).order_by(Case.risk_score.desc().nullslast(), Case.registered_at.desc()).all()
+    if not cases:
+        return []
+
+    case_ids = [c.id for c in cases]
+
+    # Batch evidence/entity counts for every case in two grouped queries instead
+    # of two queries per case (this used to be an N+1 pattern that scaled linearly
+    # with the number of cases).
+    evidence_counts = dict(
+        db.query(EvidenceFile.case_id, func.count(EvidenceFile.id))
+        .filter(EvidenceFile.case_id.in_(case_ids))
+        .group_by(EvidenceFile.case_id)
+        .all()
+    )
+    entity_counts = dict(
+        db.query(Entity.case_id, func.count(Entity.id))
+        .filter(Entity.case_id.in_(case_ids))
+        .group_by(Entity.case_id)
+        .all()
+    )
+
+    # For cases without a stored why_flagged, fetch each case's single
+    # highest-confidence link in one query instead of one query per case.
+    needs_flag_lookup = [c.id for c in cases if not c.why_flagged]
+    top_link_by_case = {}
+    if needs_flag_lookup:
+        links = (
+            db.query(EntityLink)
+            .filter(EntityLink.case_id.in_(needs_flag_lookup))
+            .order_by(EntityLink.case_id, desc(EntityLink.confidence))
+            .all()
+        )
+        for link in links:
+            # Rows are ordered by confidence desc within each case_id, so the
+            # first one seen per case_id is the highest-confidence link.
+            if link.case_id not in top_link_by_case:
+                top_link_by_case[link.case_id] = link
 
     result = []
     for c in cases:
-        flagged = get_why_flagged(db, c.id)
-        evidence_count = db.query(func.count(EvidenceFile.id)).filter(EvidenceFile.case_id == c.id).scalar() or 0
-        entity_count = db.query(func.count(Entity.id)).filter(Entity.case_id == c.id).scalar() or 0
+        if c.why_flagged:
+            flagged = c.why_flagged
+        else:
+            top_link = top_link_by_case.get(c.id)
+            flagged = (
+                f"{top_link.basis} (confidence: {top_link.confidence:.2f})"
+                if top_link
+                else None
+            )
 
         item = CaseListItem(
             id=c.id,
@@ -151,8 +194,8 @@ def list_cases(
             registered_at=c.registered_at,
             district=c.district,
             why_flagged=flagged,
-            evidence_count=evidence_count,
-            entity_count=entity_count,
+            evidence_count=evidence_counts.get(c.id, 0),
+            entity_count=entity_counts.get(c.id, 0),
         )
         result.append(item)
 

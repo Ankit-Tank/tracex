@@ -52,7 +52,7 @@ def parse_telecom(file_path: Path) -> Tuple[List[Dict[str, Any]], int]:
 
     normalized_rows = []
 
-    for _, row in df.iterrows():
+    for row_idx, (_, row) in enumerate(df.iterrows()):
         raw_extra = {str(k): (None if pd.isna(v) else v) for k, v in row.to_dict().items()}
         
         # Extract timestamp
@@ -76,7 +76,7 @@ def parse_telecom(file_path: Path) -> Tuple[List[Dict[str, Any]], int]:
             if pd.notna(val):
                 clean_val = _clean_scalar(val)
                 if clean_val and clean_val.lower() not in ["nan", "none", "null"]:
-                    normalized_rows.append(create_normalized_row("phone", clean_val, row_time, raw_extra))
+                    normalized_rows.append(create_normalized_row("phone", clean_val, row_time, raw_extra, row_index=row_idx))
 
         # IMEI
         for ic in imei_cols:
@@ -84,7 +84,7 @@ def parse_telecom(file_path: Path) -> Tuple[List[Dict[str, Any]], int]:
             if pd.notna(val):
                 clean_val = _clean_scalar(val)
                 if clean_val and clean_val.lower() not in ["nan", "none", "null"]:
-                    normalized_rows.append(create_normalized_row("imei", clean_val, row_time, raw_extra))
+                    normalized_rows.append(create_normalized_row("imei", clean_val, row_time, raw_extra, row_index=row_idx))
 
         # IMSI
         for im in imsi_cols:
@@ -92,7 +92,7 @@ def parse_telecom(file_path: Path) -> Tuple[List[Dict[str, Any]], int]:
             if pd.notna(val):
                 clean_val = _clean_scalar(val)
                 if clean_val and clean_val.lower() not in ["nan", "none", "null"]:
-                    normalized_rows.append(create_normalized_row("imsi", clean_val, row_time, raw_extra))
+                    normalized_rows.append(create_normalized_row("imsi", clean_val, row_time, raw_extra, row_index=row_idx))
 
         # IP
         for ipc in ip_cols:
@@ -100,6 +100,6 @@ def parse_telecom(file_path: Path) -> Tuple[List[Dict[str, Any]], int]:
             if pd.notna(val):
                 clean_val = str(val).strip()
                 if clean_val and clean_val.lower() not in ["nan", "none", "null"]:
-                    normalized_rows.append(create_normalized_row("ip_address", clean_val, row_time, raw_extra))
+                    normalized_rows.append(create_normalized_row("ip_address", clean_val, row_time, raw_extra, row_index=row_idx))
 
     return normalized_rows, row_count

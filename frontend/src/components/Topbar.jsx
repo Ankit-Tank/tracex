@@ -29,8 +29,8 @@ export default function Topbar({ onOpenNewInvestigation }) {
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [allCasesCache, setAllCasesCache] = useState(null);
 
   const dropdownRef = useRef(null);
   const notifButtonRef = useRef(null);
@@ -44,36 +44,47 @@ export default function Topbar({ onOpenNewInvestigation }) {
 
   const activeCaseId = caseId || "1";
 
-  // Handle Search Input
+  // Fetch the case list once (lazily, on first focus/keystroke) and reuse it for every
+  // subsequent keystroke instead of re-fetching from the network on each one.
+  const ensureCasesCache = async () => {
+    if (allCasesCache) return allCasesCache;
+    try {
+      const cases = await apiClient.get("cases");
+      setAllCasesCache(cases || []);
+      return cases || [];
+    } catch (err) {
+      console.error("Search: failed to load case list:", err);
+      return [];
+    }
+  };
+
+  // Handle Search Input — filters the cached case list locally, no network
+  // round-trip per keystroke.
   useEffect(() => {
-    if (!searchQuery.trim()) {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) {
       setSearchResults([]);
       setShowSearchResults(false);
       return;
     }
 
-    const timer = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const cases = await apiClient.get("cases");
-        const q = searchQuery.toLowerCase().trim();
-        const matches = (cases || []).filter(
-          (c) =>
-            c.case_number?.toLowerCase().includes(q) ||
-            c.victim_name?.toLowerCase().includes(q) ||
-            c.district?.toLowerCase().includes(q) ||
-            c.scam_type?.toLowerCase().includes(q)
-        );
-        setSearchResults(matches.slice(0, 5));
-        setShowSearchResults(true);
-      } catch (err) {
-        console.error("Search query failed:", err);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 200);
+    let cancelled = false;
+    ensureCasesCache().then((cases) => {
+      if (cancelled) return;
+      const matches = cases.filter(
+        (c) =>
+          c.case_number?.toLowerCase().includes(q) ||
+          c.victim_name?.toLowerCase().includes(q) ||
+          c.district?.toLowerCase().includes(q) ||
+          c.scam_type?.toLowerCase().includes(q)
+      );
+      setSearchResults(matches.slice(0, 5));
+      setShowSearchResults(true);
+    });
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+    };
   }, [searchQuery]);
 
   // Click outside listener for dropdowns
@@ -88,6 +99,14 @@ export default function Topbar({ onOpenNewInvestigation }) {
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Invalidate the cached case list when a new case is created elsewhere in the
+  // app, so search reflects it without needing a full page reload.
+  useEffect(() => {
+    const handleCaseCreated = () => setAllCasesCache(null);
+    window.addEventListener("tracex_case_created", handleCaseCreated);
+    return () => window.removeEventListener("tracex_case_created", handleCaseCreated);
   }, []);
 
   const handleSignOut = () => {

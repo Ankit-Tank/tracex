@@ -51,7 +51,7 @@ def parse_bank_upi(file_path: Path) -> Tuple[List[Dict[str, Any]], int]:
 
     normalized_rows = []
 
-    for _, row in df.iterrows():
+    for row_idx, (_, row) in enumerate(df.iterrows()):
         raw_extra = {str(k): (None if pd.isna(v) else v) for k, v in row.to_dict().items()}
 
         row_time = None
@@ -89,7 +89,7 @@ def parse_bank_upi(file_path: Path) -> Tuple[List[Dict[str, Any]], int]:
             if pd.notna(val):
                 clean_val = _clean_scalar(val)
                 if clean_val and clean_val.lower() not in ["nan", "none", "null"]:
-                    normalized_rows.append(create_normalized_row("account", clean_val, row_time, raw_extra))
+                    normalized_rows.append(create_normalized_row("account", clean_val, row_time, raw_extra, row_index=row_idx))
 
         # UPI Handles
         for uc_col in upi_cols:
@@ -97,6 +97,6 @@ def parse_bank_upi(file_path: Path) -> Tuple[List[Dict[str, Any]], int]:
             if pd.notna(val):
                 clean_val = str(val).strip()
                 if clean_val and "@" in clean_val and clean_val.lower() not in ["nan", "none", "null"]:
-                    normalized_rows.append(create_normalized_row("upi_handle", clean_val, row_time, raw_extra))
+                    normalized_rows.append(create_normalized_row("upi_handle", clean_val, row_time, raw_extra, row_index=row_idx))
 
     return normalized_rows, row_count
