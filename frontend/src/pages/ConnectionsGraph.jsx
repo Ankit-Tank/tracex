@@ -44,20 +44,15 @@ export default function ConnectionsGraph() {
     setIsLoading(true);
     setError(null);
     try {
-      const [caseRes, graphRes, topRiskRes, summaryRes, allCasesRes] = await Promise.allSettled([
-        apiClient.get(`cases/${caseId}`),
-        apiClient.get(`cases/${caseId}/graph`),
-        apiClient.get(`cases/${caseId}/entities/top-risk`),
-        apiClient.get(`cases/${caseId}/summary`),
-        apiClient.get("cases"),
+      // Paint the relationship map as soon as it is ready. The AI narrative may
+      // take longer, and must never hold the rest of the investigation hostage.
+      const caseRes = await apiClient.get(`cases/${caseId}`);
+      setCaseData(caseRes);
+      setIsLoading(false);
+      const [graphRes, topRiskRes, summaryRes, allCasesRes] = await Promise.allSettled([
+        apiClient.get(`cases/${caseId}/graph`), apiClient.get(`cases/${caseId}/entities/top-risk`),
+        apiClient.get(`cases/${caseId}/summary`), apiClient.get("cases"),
       ]);
-
-      if (caseRes.status === "fulfilled") {
-        setCaseData(caseRes.value);
-      } else {
-        throw new Error("Case could not be found or loaded");
-      }
-
       if (graphRes.status === "fulfilled" && graphRes.value) {
         setGraphData({
           nodes: graphRes.value.nodes || [],
@@ -81,9 +76,7 @@ export default function ConnectionsGraph() {
       }
     } catch (err) {
       setError(err.message || "Failed to load graph data for this case.");
-    } finally {
-      setIsLoading(false);
-    }
+    } finally { setIsLoading(false); }
   };
 
   useEffect(() => {
@@ -214,7 +207,7 @@ export default function ConnectionsGraph() {
       </section>
 
       {/* 3. Two-Column Layout: Network Graph (flex, wider) + 290px Side Column */}
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
+      <div className="flex flex-col xl:flex-row gap-6 items-start">
         {/* Main Graph Panel */}
         <div className="flex-1 min-w-0 w-full space-y-2">
           <NetworkGraph
@@ -227,7 +220,7 @@ export default function ConnectionsGraph() {
         </div>
 
         {/* Side Column (290px) */}
-        <div className="w-full lg:w-[290px] lg:min-w-[290px] space-y-5">
+        <div className="w-full xl:w-[290px] xl:min-w-[290px] space-y-5">
           {/* Top Risk Entities Panel */}
           <div className="border border-border rounded-sm p-4 space-y-3 bg-bg shadow-sm">
             <div className="border-b border-border pb-2 flex items-center justify-between">
@@ -273,14 +266,17 @@ export default function ConnectionsGraph() {
             )}
           </div>
 
-          {/* AI Case Summary Panel */}
-          <div className="border border-border rounded-sm p-4 space-y-3 bg-bg shadow-sm">
+        </div>
+      </div>
+
+      {/* The story uses the width below the map so it remains readable and is
+          visually separate from both the graph and priority targets. */}
+      <section className="border border-border rounded-xl bg-bg shadow-sm overflow-hidden">
+          <div className="p-5 space-y-3">
             <div className="border-b border-border pb-2 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-accent" />
-                <h3 className="text-[12.5px] uppercase tracking-wider font-bold text-text">
-                  AI Case Narrative
-                </h3>
+                <div><h3 className="text-[14px] tracking-wide font-bold text-text">AI Case Narrative</h3><p className="text-[11px] text-textFaint mt-0.5">A simple explanation of what the relationship map means</p></div>
               </div>
               <button
                 onClick={handleRegenerateSummary}
@@ -294,14 +290,8 @@ export default function ConnectionsGraph() {
               </button>
             </div>
 
-            {summaryData ? (
-              <div className="space-y-2 text-[12px] text-textDim leading-relaxed">
-                {summaryData.narrative_text
-                  .split("\n\n")
-                  .filter((p) => p.trim())
-                  .map((paragraph, idx) => (
-                    <p key={idx}>{paragraph}</p>
-                  ))}
+            {summaryData ? (<div className="grid md:grid-cols-2 gap-px bg-border rounded-lg overflow-hidden">
+                {["What is happening?", "How are they connected?", "What stands out?", "Key takeaway"].map((heading, idx) => <div key={heading} className="bg-bg p-4 text-[12px] text-textDim leading-relaxed"><h4 className="text-accent font-bold text-[11px] uppercase tracking-wide mb-1">{heading}</h4><p>{summaryData.narrative_text.split("\n\n").filter((p) => p.trim())[idx] || (idx === 3 ? "Follow the highlighted trail and begin with the priority targets." : "This part of the story is still being refined from the evidence.")}</p></div>)}
                 <div className="pt-2 border-t border-border flex items-center justify-between text-[10px] text-textFaint">
                   <span>Model: {summaryData.model_version || "Deterministic Narrative"}</span>
                   <span className="font-mono">
@@ -323,8 +313,8 @@ export default function ConnectionsGraph() {
               </div>
             )}
           </div>
-        </div>
-      </div>
+      </section>
     </div>
   );
 }
+
